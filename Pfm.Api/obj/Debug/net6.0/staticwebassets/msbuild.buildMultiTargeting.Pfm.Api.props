@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="../build/Pfm.Api.props" />
+</Project>
