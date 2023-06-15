@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Pfm.Api.Helpers;
 using Pfm.Api.ViewModels;
@@ -164,15 +165,19 @@ public class PresenceController : Controller
     #endregion
 
     [HttpPost("Checkin", Name = "UsersCheckin")]
-    public string Checkin(IFormFile face)
+    public string Checkin(string bitmap_face)
     {
+        var path = Path.Combine(AppSetting.PathFileUser);
+        var pathxx = $"{path}/file-foto.png";
+
+        // var png_b64 = bitmap_face.Substring(22); // extract only base64 part.
+        var png_bytes = Convert.FromBase64String(bitmap_face);
+ 
+        System.IO.File.WriteAllBytes(pathxx, png_bytes);
+        Console.WriteLine("The data has been written to the file.");
+        
         string ret = "";
-        using (var ms = new MemoryStream())
-        {
-            face.CopyTo(ms);
-            var fileBytes = ms.ToArray();
-            
-            presence.Checkin(fileBytes, 
+         presence.Checkin(png_bytes, 
                 successAction => { 
                     ret = successAction; 
                 }, 
@@ -183,7 +188,6 @@ public class PresenceController : Controller
                     }
                 }
             );
-        }
        
 
         goto GotoReturn;
