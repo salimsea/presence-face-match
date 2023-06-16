@@ -13,13 +13,11 @@ namespace Pfm.Api.Helpers
         {
             AppSetting.KeySecret = appSettings.KeySecret;
             AppSetting.ConnectionString = appSettings.ConnectionString;
-            AppSetting.LatitudeOffice = appSettings.LatitudeOffice;
-            AppSetting.LongitudeOffice = appSettings.LongitudeOffice;
 
             AppSetting.BasePathFile = appSettings.BasePathFile;
             AppSetting.BaseUrl = appSettings.BaseUrl;
             AppSetting.BaseUrlProxy = appSettings.BaseUrlProxy;
-            AppSetting.BaseUrlFile = appSettings.BaseUrlFile;
+            AppSetting.BaseUrlFile = $"{appSettings.BaseUrl}/{appSettings.BaseUrlFile}";
 
             AppSetting.PathFileUser = $"{appSettings.BasePathFile}/{appSettings.PathFileUser}";
             AppSetting.UrlFileUser = $"/{appSettings.BaseUrlFile}/{appSettings.PathFileUser}";

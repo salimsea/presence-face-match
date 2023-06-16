@@ -5,8 +5,6 @@ namespace Pfm.Core.Helpers
     {
         public static string ConnectionString { get; set; }
         public static string KeySecret { get; set; }
-        public static double LatitudeOffice { get; set; }
-        public static double LongitudeOffice { get; set; }
 
         public static string BaseUrl { get; set; }
         public static string BaseUrlProxy { get; set; }

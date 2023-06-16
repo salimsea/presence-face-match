@@ -25,49 +25,63 @@ public class PresenceController : Controller
     }
 
     #region PEGAWAI MODUL
-
+    [Authorize]
     [HttpGet("GetPegawais", Name = "GetPegawais")]
     public IActionResult GetPegawais()
     {
         string err = string.Empty;
-        List<TbPegawai> ret = new();
+        List<PegawaiViewModel> ret = new();
         var result = presence.GetPegawais();
         if(result.Count() == 0) 
         {
             err = "data not found";
             goto GotoReturn;
         }
-        ret = result.OrderByDescending(x => x.IdPegawai).ToList();
+        ret = result.Select(x => new PegawaiViewModel()
+        { 
+            IdPegawai = x.IdPegawai,
+            Nama = x.Nama, 
+            Nip = x.Nip, 
+            UrlFile = $"{AppSetting.BaseUrl}{AppSetting.UrlFileUser}/{x.Foto}", 
+            CreatedBy = x.CreatedBy 
+        }
+        ).ToList();
         goto GotoReturn;
     GotoReturn:
-        return Ok(new ResponseViewModel<List<TbPegawai>>()
+        return Ok(new ResponseViewModel<List<PegawaiViewModel>>()
         {
             Data = ret,
             IsSuccess = string.IsNullOrEmpty(err),
             ReturnMessage = err
         });
     }
+    [Authorize]
     [HttpGet("GetPegawai", Name = "GetPegawai")]
     public IActionResult GetPegawai(int idPegawai)
     {
         string err = string.Empty;
-        TbPegawai ret = new();
+        PegawaiViewModel ret = new();
         var result = presence.GetPegawai(idPegawai);
         if(result == null) 
         {
             err = "data not found";
             goto GotoReturn;
         }
-        ret = result;
+        ret.IdPegawai = result.IdPegawai;
+        ret.Nama = result.Nama;
+        ret.Nip = result.Nip;
+        ret.UrlFile = $"{AppSetting.BaseUrl}{AppSetting.UrlFileUser}/{result.Foto}";
+        ret.CreatedBy = result.CreatedBy;
         goto GotoReturn;
     GotoReturn:
-        return Ok(new ResponseViewModel<TbPegawai>()
+        return Ok(new ResponseViewModel<PegawaiViewModel>()
         {
             Data = ret,
             IsSuccess = string.IsNullOrEmpty(err),
             ReturnMessage = err
         });
     }
+    [Authorize]
     [HttpPost("AddPegawai", Name = "AddPegawai")]
     public IActionResult AddPegawai(
         string nip,
@@ -86,9 +100,7 @@ public class PresenceController : Controller
         };
         string pathFile = $"{AppSetting.PathFileUser}";
         if (foto != null && foto.Length >= 0)
-        {
             tbPegawai.Foto = $"{Guid.NewGuid()}{Path.GetExtension(foto.FileName)}";
-        }
         presence.AddPegawai(tbPegawai,
         successAction => { 
             if (successAction != null)
@@ -109,6 +121,7 @@ public class PresenceController : Controller
             ReturnMessage = err
         });
     }
+    [Authorize]
     [HttpPost("EditPegawai", Name = "EditPegawai")]
     public IActionResult EditPegawai(
         int idPegawai,
@@ -118,6 +131,12 @@ public class PresenceController : Controller
     )
     {
         string err = string.Empty;
+        var result = presence.GetPegawai(idPegawai);
+        if(result == null) 
+        {
+            err = "data not found";
+            goto GotoReturn;
+        }
         TbPegawai tbPegawai = new TbPegawai
         {
             IdPegawai = idPegawai,
@@ -126,8 +145,23 @@ public class PresenceController : Controller
             Foto = null,
             CreatedBy = 1
         };
+        string pathFile = $"{AppSetting.PathFileUser}";
+        string fileOld = "";
+        if (foto != null && foto.Length >= 0) {
+            fileOld = $"{AppSetting.PathFileUser}/{result.Foto}";
+            tbPegawai.Foto = $"{Guid.NewGuid()}{Path.GetExtension(foto.FileName)}";
+        }
         presence.EditPegawai(tbPegawai,
-        successAction => { },
+        successAction => {
+            if (successAction != null)
+            {
+                if (foto != null && foto.Length >= 0)
+                {
+                    FileHelper.DeleteFile(fileOld);
+                    FileHelper.SaveImage(pathFile, tbPegawai.Foto, foto, false);
+                }
+            }
+        },
         failAction => { err = failAction; });
         goto GotoReturn;
     GotoReturn:
@@ -139,18 +173,25 @@ public class PresenceController : Controller
         });
     }
 
+    [Authorize]
     [HttpDelete("DeletePegawai", Name = "DeletePegawai")]
     public IActionResult DeletePegawai(int idPegawai)
     {
         string err = string.Empty;
-        var tbUser = presence.GetPegawai(idPegawai);
-        if(tbUser == null)
+        var data = presence.GetPegawai(idPegawai);
+        if(data == null)
         {
             err ="data not found";
             goto GotoReturn;
         }
+        string fileOld = $"{AppSetting.PathFileUser}/{data.Foto}";
         presence.DeletePegawai(idPegawai,
-        successAction => { },
+        successAction => { 
+            if (successAction != null)
+            {
+                    FileHelper.DeleteFile(fileOld);
+            }
+        },
         failAction => { err = failAction; });
         goto GotoReturn;
     GotoReturn:
@@ -165,33 +206,43 @@ public class PresenceController : Controller
     #endregion
 
     [HttpPost("Checkin", Name = "UsersCheckin")]
-    public string Checkin(string bitmap_face)
+    public IActionResult Checkin(string bitmap_face)
     {
-        var path = Path.Combine(AppSetting.PathFileUser);
-        var pathxx = $"{path}/file-foto.png";
-
-        // var png_b64 = bitmap_face.Substring(22); // extract only base64 part.
+        var path = $"{Path.Combine(AppSetting.PathFileUser)}/{Guid.NewGuid()}_presensi.png";
         var png_bytes = Convert.FromBase64String(bitmap_face);
- 
-        System.IO.File.WriteAllBytes(pathxx, png_bytes);
-        Console.WriteLine("The data has been written to the file.");
         
-        string ret = "";
-         presence.Checkin(png_bytes, 
-                successAction => { 
-                    ret = successAction; 
+        string err = "";
+        PegawaiViewModel pegawaiView = new();
+        TbPegawai tbPegawai = new();
+        presence.Checkin(png_bytes, 
+                successAction => {
+                    tbPegawai = successAction;
+                    System.IO.File.WriteAllBytes(path, png_bytes);
                 }, 
                 failAction => {
                     if(!string.IsNullOrEmpty(failAction))
                     {
-                        ret = failAction; 
+                        err = failAction; 
                     }
                 }
             );
-       
 
+        if(err == "") 
+        {
+            pegawaiView.IdPegawai = tbPegawai.IdPegawai;
+            pegawaiView.Nama = tbPegawai.Nama;
+            pegawaiView.Nip = tbPegawai.Nip;
+            pegawaiView.UrlFile = $"{AppSetting.BaseUrl}{AppSetting.UrlFileUser}/{tbPegawai.Foto}";
+            pegawaiView.CreatedBy = tbPegawai.CreatedBy;
+        }
+       
         goto GotoReturn;
     GotoReturn:
-        return ret;
+        return Ok(new ResponseViewModel<PegawaiViewModel>()
+        {
+            Data = pegawaiView,
+            IsSuccess = string.IsNullOrEmpty(err),
+            ReturnMessage = err
+        });
     }
 }

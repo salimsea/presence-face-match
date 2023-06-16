@@ -11,8 +11,7 @@ namespace Pfm.Core.Interfaces
     {
         void Login(string email, string password, Action<JwtTokenModel> successAction, Action<string> failAction);
 
-        void Checkin(byte[] face, Action<string> successAction, Action<string> failAction);
-        void Checkout(byte[] face, Action<string> successAction, Action<string> failAction);
+        void Checkin(byte[] face, Action<TbPegawai> successAction, Action<string> failAction);
 
         IEnumerable<TbUser> GetUsers();
         TbUser GetUser(int idUser);

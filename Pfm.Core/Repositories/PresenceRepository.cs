@@ -39,7 +39,7 @@ namespace Pfm.Core.Repositories
             }
         }
          
-        public void Checkin(byte[] face, Action<string> successAction, Action<string> failAction)
+        public void Checkin(byte[] face, Action<TbPegawai> successAction, Action<string> failAction)
         {
             try
             {
@@ -48,6 +48,7 @@ namespace Pfm.Core.Repositories
                 var dataPegawais = this.GetPegawais();
                 var countPegawai = dataPegawais.Count();
                 var msgFace = "";
+                TbPegawai tbPegawai = new();
                 foreach (var item in dataPegawais)
                 {
                     var pathFoto = Path.Combine(AppSetting.PathFileUser);
@@ -80,33 +81,71 @@ namespace Pfm.Core.Repositories
 
                     if(score >= 075)
                     {
-                        msgFace = $"{item.Nama} : STATUS FACE :  COCOK";
+                        tbPegawai = item;
                         break;
                     }
                     else
                     {
-                        msgFace = "STATUS FACE : TIDAK COCOK";
+                        msgFace = "Wajah tidak terdaftar!";
                     }
                 }
+                if(msgFace != "") {
+                    using var conn = PostgreSqlConnection;
+                    using var tx = conn.BeginTransaction();
+                    var cekPresensi = conn.GetList<TbPresensi>().Where(x => x.Tanggal.Date == DateTime.Now.Date)
+                                                                .Where(x => x.IdPegawai == tbPegawai.IdPegawai)
+                                                                .FirstOrDefault();
 
-                successAction(msgFace);
-                failAction("");
+                    if(cekPresensi != null)
+                    {
+                        ///sudah absen hadir dan sudah absen pulang
+                        if(cekPresensi.JamKeluar != null)
+                        {
+                            successAction(null);
+                            failAction("Anda sudah melakukan absensi hadir & pulang, tidak dapat absen kembali !");
+                        }
+                        ///sudah absen hadir dan BELUM absen pulang
+                        else
+                        {
+                            var tbPengaturan = conn.GetList<TbPengaturan>().FirstOrDefault();
+                            var maxTimeOut = tbPengaturan.JamKeluar - TimeSpan.FromMinutes(tbPengaturan.ToleransiJamKeluarMenit);
+                            if (DateTime.Now.TimeOfDay <= maxTimeOut)
+                            {
+                                successAction(null);
+                                failAction("Absen pulang belum pada waktu nya!");
+                            } else {
+                                cekPresensi.JamKeluar = DateTime.Now.TimeOfDay;
+                                conn.Update(cekPresensi);
+                            }
+                        }
+                    } else {
+                        TbPresensi tbPresensi = new()
+                        {
+                            IdPegawai = tbPegawai.IdPegawai,
+                            Tanggal = DateTime.Now,
+                            JamHadir = DateTime.Now.TimeOfDay,
+                            JamKeluar = null,
+                        };
+                        conn.Insert(tbPresensi);
+                    }
+                   
 
-               
+                    successAction(tbPegawai);
+                    failAction("");
+                } else {
+                    successAction(null);
+                    failAction(msgFace);
+                }
 
             }
             catch (System.Exception ex)
             {
-                successAction("ERROR");
+                successAction(null);
                 failAction("");
                 throw;
             }
         }
 
-        public void Checkout(byte[] face, Action<string> successAction, Action<string> failAction)
-        {
-            throw new NotImplementedException();
-        }
 
         public void AddPegawai(TbPegawai tbPegawai, Action<string> successAction, Action<string> failAction)
         {

@@ -10,14 +10,15 @@ using Pfm.Core.Interfaces;
 using Pfm.Core.Entities;
 using Pfm.Core.Models;
 using Pfm.Api.ViewModels;
+using Pfm.Core.Helpers;
 
 namespace Ispm.Api.Controllers
 {
     [Route("api/[controller]")]
-    public class SecurityController : ControllerBase
+    public class AuthController : ControllerBase
     {
         private readonly IPresence presence;
-        public SecurityController(IPresence presence)
+        public AuthController(IPresence presence)
         {
             this.presence = presence;
         }
@@ -52,6 +53,22 @@ namespace Ispm.Api.Controllers
                 Data = ret.Token != null ? ret : null,
                 IsSuccess = string.IsNullOrEmpty(err),
                 ReturnMessage = err
+            });
+        }
+    
+        [Authorize]
+        [HttpGet("GetInfoUser", Name = "GetInfoUser")]
+        public IActionResult GetPegawais()
+        {
+            UserViewModel ret = new();
+            ret.Nama = UserInfo().Nama;
+            ret.Email = UserInfo().Email;
+            ret.Nama = UserInfo().Nama;
+            return Ok(new ResponseViewModel<UserViewModel>()
+            {
+                Data = ret,
+                IsSuccess = string.IsNullOrEmpty(null),
+                ReturnMessage = null
             });
         }
     }

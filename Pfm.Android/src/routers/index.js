@@ -6,7 +6,9 @@ const Stack = createNativeStackNavigator();
 
 const Routers = () => {
   return (
-    <Stack.Navigator initialRouteName="Scan">
+    <Stack.Navigator
+      initialRouteName="Home"
+      screenOptions={{headerShown: false}}>
       <Stack.Screen name="Home" component={Home} />
       <Stack.Screen name="Scan" component={Scan} />
       <Stack.Screen name="Result" component={Result} />
