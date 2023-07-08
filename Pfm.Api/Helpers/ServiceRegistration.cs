@@ -8,7 +8,7 @@ namespace Pfm.Api.Helpers
 	{
         public static void AddServices(this IServiceCollection services)
         {
-            services.AddScoped<IPresence, PresenceRepository>();
+            services.AddScoped<IPresensi, PresensiRepository>();
         }
     }
 }

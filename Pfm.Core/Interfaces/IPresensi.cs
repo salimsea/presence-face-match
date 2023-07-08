@@ -7,11 +7,15 @@ using Pfm.Core.Models;
 
 namespace Pfm.Core.Interfaces
 {
-    public interface IPresence
+    public interface IPresensi
     {
         void Login(string email, string password, Action<JwtTokenModel> successAction, Action<string> failAction);
 
-        void Checkin(byte[] face, Action<TbPegawai> successAction, Action<string> failAction);
+        void SetPengaturan(TbPengaturan tbPengaturan, Action<string> successAction, Action<string> failAction);
+        TbPengaturan GetPengaturan();
+        void Checkin(byte[] face, string fileName, Action<TbPegawai> successAction, Action<string> failAction);
+        void CheckinManual(List<TbPresensi> tbPresensi, Action<string> successAction, Action<string> failAction);
+        IEnumerable<TbPresensi> GetPresensis();
 
         IEnumerable<TbUser> GetUsers();
         TbUser GetUser(int idUser);

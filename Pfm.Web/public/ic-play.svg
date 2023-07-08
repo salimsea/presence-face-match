@@ -1,0 +1,16 @@
+<svg
+    data-icon-name="play"
+    data-style="line"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    id="play"
+    class="icon line"
+    width="48"
+    height="48"
+>
+    <path
+    style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5px;"
+    d="M16,12l-6,4V8ZM12,3a9,9,0,1,0,9,9A9,9,0,0,0,12,3Z"
+    id="primary"
+    ></path>
+</svg>

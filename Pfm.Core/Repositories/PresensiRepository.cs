@@ -13,7 +13,7 @@ using Ispm.Core.Helpers;
 
 namespace Pfm.Core.Repositories
 {
-    public class PresenceRepository : DapperHelper, IPresence
+    public class PresensiRepository : DapperHelper, IPresensi
     {
         public void Login(string email, string password, Action<JwtTokenModel> successAction, Action<string> failAction)
         {
@@ -39,7 +39,7 @@ namespace Pfm.Core.Repositories
             }
         }
          
-        public void Checkin(byte[] face, Action<TbPegawai> successAction, Action<string> failAction)
+        public void Checkin(byte[] face, string fileName, Action<TbPegawai> successAction, Action<string> failAction)
         {
             try
             {
@@ -77,8 +77,6 @@ namespace Pfm.Core.Repositories
                             score = comparison.Similarity * 100;
                     }
 
-                    Console.WriteLine($"SCORE {score}");
-
                     if(score >= 075)
                     {
                         tbPegawai = item;
@@ -95,6 +93,7 @@ namespace Pfm.Core.Repositories
                     var cekPresensi = conn.GetList<TbPresensi>().Where(x => x.Tanggal.Date == DateTime.Now.Date)
                                                                 .Where(x => x.IdPegawai == tbPegawai.IdPegawai)
                                                                 .FirstOrDefault();
+                    var tbPengaturan = conn.GetList<TbPengaturan>().FirstOrDefault();
 
                     if(cekPresensi != null)
                     {
@@ -107,14 +106,14 @@ namespace Pfm.Core.Repositories
                         ///sudah absen hadir dan BELUM absen pulang
                         else
                         {
-                            var tbPengaturan = conn.GetList<TbPengaturan>().FirstOrDefault();
-                            var maxTimeOut = tbPengaturan.JamKeluar - TimeSpan.FromMinutes(tbPengaturan.ToleransiJamKeluarMenit);
+                            var maxTimeOut = tbPengaturan.WaktuKeluar - TimeSpan.FromMinutes(tbPengaturan.ToleransiWaktuKeluar);
                             if (DateTime.Now.TimeOfDay <= maxTimeOut)
                             {
                                 successAction(null);
                                 failAction("Absen pulang belum pada waktu nya!");
                             } else {
                                 cekPresensi.JamKeluar = DateTime.Now.TimeOfDay;
+                                cekPresensi.FotoKeluar = fileName;
                                 conn.Update(cekPresensi);
                             }
                         }
@@ -125,6 +124,10 @@ namespace Pfm.Core.Repositories
                             Tanggal = DateTime.Now,
                             JamHadir = DateTime.Now.TimeOfDay,
                             JamKeluar = null,
+                            WaktuHadir = tbPengaturan.WaktuHadir,
+                            WaktuKeluar = tbPengaturan.WaktuKeluar,
+                            FotoHadir = fileName,
+                            FotoKeluar = null,
                         };
                         conn.Insert(tbPresensi);
                     }
@@ -210,7 +213,9 @@ namespace Pfm.Core.Repositories
         public IEnumerable<TbPegawai> GetPegawais()
         {
             using var conn = PostgreSqlConnection;
-            return conn.GetList<TbPegawai>();
+            return from a in conn.GetList<TbPegawai>() 
+                    join b in conn.GetList<TbUser>() on a.CreatedBy equals b.IdUser
+                    select TbPegawai.SetVal(a, b);
         }
 
         public IEnumerable<TbUser> GetUsers()
@@ -222,6 +227,61 @@ namespace Pfm.Core.Repositories
         public TbUser GetUser(int idUser)
         {
             return GetUsers().Where(x => x.IdUser == idUser).FirstOrDefault();
+        }
+
+        public void CheckinManual(List<TbPresensi> tbPresensi, Action<string> successAction, Action<string> failAction)
+        {
+            try
+            {
+                using var conn = PostgreSqlConnection;
+                using var tx = conn.BeginTransaction();
+                foreach (var item in tbPresensi)
+                {
+                    conn.Insert(item);
+                }
+                successAction("success");
+                failAction("");
+                tx.Commit();
+            }
+            catch (System.Exception ex)
+            {
+                successAction(null);
+                failAction(ErrorHelper.GetErrorMessage("CheckinManual", ex));
+            }
+        }
+
+        public IEnumerable<TbPresensi> GetPresensis()
+        {
+            using var conn = PostgreSqlConnection;
+            using var tx = conn.BeginTransaction();
+            return from a in conn.GetList<TbPresensi>()
+                   join b in conn.GetList<TbPegawai>() on a.IdPegawai equals b.IdPegawai
+                   select TbPresensi.SetVal(a, b);
+        }
+
+        public TbPengaturan GetPengaturan()
+        {
+            using var conn = PostgreSqlConnection;
+            using var tx = conn.BeginTransaction();
+            return conn.GetList<TbPengaturan>().FirstOrDefault();
+        }
+
+        public void SetPengaturan(TbPengaturan tbPengaturan, Action<string> successAction, Action<string> failAction)
+        {
+            try
+            {
+                using var conn = PostgreSqlConnection;
+                using var tx = conn.BeginTransaction();
+                conn.Update(tbPengaturan);
+                successAction("success");
+                failAction("");
+                tx.Commit();
+            }
+            catch (System.Exception ex)
+            {
+                successAction(null);
+                failAction(ErrorHelper.GetErrorMessage("SetPengaturan", ex));
+            }
         }
     }
 }

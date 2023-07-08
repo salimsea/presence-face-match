@@ -1,16 +1,24 @@
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
 
 const Header = () => {
+  var storage = localStorage.getItem("TOKEN");
+  const btnLogout = () => {
+    localStorage.removeItem("TOKEN");
+    Swal.fire("Berhasil", `Anda berhasil logout!`, "success").then(() => {
+      window.location = "/";
+    });
+  };
   return (
     <nav className="bg-white border-gray-200 dark:bg-gray-900 mb-10 shadow-sm">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <a href="/" className="flex items-center">
-          {/* <img
+          <img
             src="https://flowbite.com/docs/images/logo.svg"
             className="h-8 mr-3"
             alt="Flowbite Logo"
-          /> */}
-          <span className="self-center text-2xl font-semibold whitespace-nowrap text-blue-600">
+          />
+          <span className="self-center text-2xl font-bold whitespace-nowrap text-[#9B5DD6]">
             Presensi
           </span>
         </a>
@@ -38,39 +46,52 @@ const Header = () => {
         </button>
         <div className="hidden w-full md:block md:w-auto" id="navbar-default">
           <ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
-            <li>
-              <Link
-                to={"/"}
-                className="block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-              >
-                Monitoring
-              </Link>
-            </li>
-
-            <li>
-              <Link
-                to={"/pegawai"}
-                className="block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-              >
-                Pegawai
-              </Link>
-            </li>
-            <li>
-              <Link
-                to={"/laporan"}
-                className="block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-              >
-                Laporan
-              </Link>
-            </li>
-            <li>
-              <Link
-                to={"/login"}
-                className="block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-              >
-                Login
-              </Link>
-            </li>
+            {!storage && (
+              <li>
+                <Link
+                  to={"/login"}
+                  className="block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-[#9B5DD6] md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
+                >
+                  Login
+                </Link>
+              </li>
+            )}
+            {storage && (
+              <>
+                <li>
+                  <Link
+                    to={"/pegawai"}
+                    className="block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-[#9B5DD6] md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
+                  >
+                    Pegawai
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to={"/laporan"}
+                    className="block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-[#9B5DD6] md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
+                  >
+                    Laporan
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to={"/pengaturan"}
+                    className="block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-[#9B5DD6] md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
+                  >
+                    Pengaturan
+                  </Link>
+                </li>
+                <li>
+                  <p
+                    onClick={btnLogout}
+                    className="cursor-pointer block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-[#9B5DD6] md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
+                  >
+                    Keluar
+                  </p>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       </div>

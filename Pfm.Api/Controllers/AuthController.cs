@@ -17,8 +17,8 @@ namespace Ispm.Api.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly IPresence presence;
-        public AuthController(IPresence presence)
+        private readonly IPresensi presence;
+        public AuthController(IPresensi presence)
         {
             this.presence = presence;
         }
@@ -61,6 +61,7 @@ namespace Ispm.Api.Controllers
         public IActionResult GetPegawais()
         {
             UserViewModel ret = new();
+            ret.IdUser = UserInfo().IdUser;
             ret.Nama = UserInfo().Nama;
             ret.Email = UserInfo().Email;
             ret.Nama = UserInfo().Nama;

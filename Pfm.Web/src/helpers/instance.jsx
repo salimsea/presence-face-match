@@ -2,14 +2,14 @@ import axios from "axios";
 import Swal from "sweetalert2";
 
 const TOKEN = localStorage.getItem("TOKEN");
-export const instance = axios.create({
+export const instanceAuth = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL_API,
   timeout: 60000,
   withCredentials: false,
   headers: {},
 });
 
-instance.interceptors.request.use(
+instanceAuth.interceptors.request.use(
   (request) => {
     const token = TOKEN;
     if (token && token.length > 0)
@@ -21,7 +21,7 @@ instance.interceptors.request.use(
   }
 );
 
-instance.interceptors.response.use(
+instanceAuth.interceptors.response.use(
   (response) => {
     return response;
   },
@@ -77,4 +77,9 @@ instance.interceptors.response.use(
   }
 );
 
-export default instance;
+export const instance = axios.create({
+  baseURL: import.meta.env.VITE_BASE_URL_API,
+  timeout: 20000,
+  withCredentials: false,
+  headers: {},
+});

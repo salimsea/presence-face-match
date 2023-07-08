@@ -1,3 +1,3 @@
-import instance from "./instance";
+import { instance, instanceAuth } from "./instance";
 
-export { instance };
+export { instance, instanceAuth };

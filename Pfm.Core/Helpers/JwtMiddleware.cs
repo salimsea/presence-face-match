@@ -20,7 +20,7 @@ namespace Pfm.Core.Helpers
             _next = next;
         }
 
-        public async Task Invoke(HttpContext context, IPresence presence)
+        public async Task Invoke(HttpContext context, IPresensi presence)
         {
             var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
@@ -30,7 +30,7 @@ namespace Pfm.Core.Helpers
             await _next(context);
         }
 
-        private static void AttachUserToContext(HttpContext context, IPresence presence, string token)
+        private static void AttachUserToContext(HttpContext context, IPresensi presence, string token)
         {
             try
             {
