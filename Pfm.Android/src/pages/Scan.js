@@ -15,7 +15,7 @@ const Scan = () => {
           var fd = new FormData();
           fd.append('bitmap_face', bitmap);
           axios
-            .post('http://pfm-api.s34l.my.id/api/Presence/Checkin', fd, {
+            .post('http://pfm-api.s34l.my.id/api/presensi/checkin', fd, {
               headers: {
                 accept: 'application/json',
                 'content-type': 'multipart/form-data',

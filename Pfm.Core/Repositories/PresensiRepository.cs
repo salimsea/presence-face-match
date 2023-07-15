@@ -79,6 +79,7 @@ namespace Pfm.Core.Repositories
 
                     if(score >= 075)
                     {
+                        msgFace = "";
                         tbPegawai = item;
                         break;
                     }
@@ -87,7 +88,7 @@ namespace Pfm.Core.Repositories
                         msgFace = "Wajah tidak terdaftar!";
                     }
                 }
-                if(msgFace != "") {
+                if(msgFace == "") {
                     using var conn = PostgreSqlConnection;
                     using var tx = conn.BeginTransaction();
                     var cekPresensi = conn.GetList<TbPresensi>().Where(x => x.Tanggal.Date == DateTime.Now.Date)
@@ -102,6 +103,7 @@ namespace Pfm.Core.Repositories
                         {
                             successAction(null);
                             failAction("Anda sudah melakukan absensi hadir & pulang, tidak dapat absen kembali !");
+                            return;
                         }
                         ///sudah absen hadir dan BELUM absen pulang
                         else
@@ -111,6 +113,7 @@ namespace Pfm.Core.Repositories
                             {
                                 successAction(null);
                                 failAction("Absen pulang belum pada waktu nya!");
+                                return;
                             } else {
                                 cekPresensi.JamKeluar = DateTime.Now.TimeOfDay;
                                 cekPresensi.FotoKeluar = fileName;
@@ -135,6 +138,7 @@ namespace Pfm.Core.Repositories
 
                     successAction(tbPegawai);
                     failAction("");
+                    tx.Commit();
                 } else {
                     successAction(null);
                     failAction(msgFace);
@@ -144,7 +148,7 @@ namespace Pfm.Core.Repositories
             catch (System.Exception ex)
             {
                 successAction(null);
-                failAction("");
+                failAction(ErrorHelper.GetErrorMessage("Checkin", ex));
                 throw;
             }
         }
@@ -175,6 +179,11 @@ namespace Pfm.Core.Repositories
                 using var conn = PostgreSqlConnection;
                 using var tx = conn.BeginTransaction();
                 var tbPegawaExist = conn.Get<TbPegawai>(idPegawai);
+                var tbPresensiExist = conn.GetList<TbPresensi>().Where(x => x.IdPegawai == idPegawai).ToList();
+                foreach (var item in tbPresensiExist)
+                {
+                    conn.Delete(item);
+                }
                 conn.Delete(tbPegawaExist);
                 successAction("success");
                 failAction("");

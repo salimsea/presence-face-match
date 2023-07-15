@@ -8,4 +8,5 @@ CREATE INDEX tb_presensi_id_presensi ON tb_presensi (id_presensi);
 CREATE INDEX tb_user_id_user ON tb_user (id_user);
 ALTER TABLE tb_presensi ADD CONSTRAINT "FK id_pegawai = id_pegawai" FOREIGN KEY (id_pegawai) REFERENCES tb_pegawai (id_pegawai);
 ALTER TABLE tb_pegawai ADD CONSTRAINT "FK id_user = created_by" FOREIGN KEY (created_by) REFERENCES tb_user (id_user);
-
+ALTER TABLE IF EXISTS public.tb_presensi
+    ALTER COLUMN jam_keluar DROP NOT NULL;

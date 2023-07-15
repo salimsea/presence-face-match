@@ -14,6 +14,7 @@ namespace Pfm.Api.ViewModels
         public string? Nama { get; set; }
         public string? Nip { get; set; }
         public string CreatedBy { get; set; }
+        public PresensiViewModel PresensiHariIni { get; set; }
     }
 }
 

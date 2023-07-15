@@ -11,6 +11,7 @@ const Pegawai = () => {
   const [showModal, setShowModal] = useState(false);
   const [dataPegawais, setDataPegawais] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  
   const {
     register,
     handleSubmit,
@@ -30,13 +31,16 @@ const Pegawai = () => {
       getPegawai(id);
     } else {
       setIsEdit(false);
+      reset()
     }
   };
 
   const getPegawais = () => {
+    Swal.showLoading();
     instanceAuth.get("/presensi/getpegawais").then((res) => {
       var data = res.data;
       if (data.isSuccess) {
+        Swal.close();
         setDataPegawais(data.data);
       } else {
         Swal.fire("Gagal", data.returnMessage, "error");
@@ -45,9 +49,11 @@ const Pegawai = () => {
   };
 
   const getPegawai = (id) => {
+    Swal.showLoading();
     instanceAuth.get(`/presensi/getpegawai?idpegawai=${id}`).then((res) => {
       var data = res.data;
       if (data.isSuccess) {
+        Swal.close();
         setValue("idPegawai", data.data.idPegawai);
         setValue("nama", data.data.nama);
         setValue("nip", data.data.nip);
@@ -60,6 +66,7 @@ const Pegawai = () => {
   };
 
   const btnAdd = (data) => {
+    Swal.showLoading();
     var fd = new FormData();
     fd.append("nama", data.nama);
     fd.append("nip", data.nip);
@@ -82,6 +89,7 @@ const Pegawai = () => {
   };
 
   const btnEdit = (data) => {
+    Swal.showLoading();
     var fd = new FormData();
     fd.append("idPegawai", data.idPegawai);
     fd.append("nama", data.nama);
@@ -111,22 +119,23 @@ const Pegawai = () => {
       confirmButtonText: "Ya, saya yakin!",
     }).then((result) => {
       if (result.isConfirmed) {
-        instanceAuth
-          .delete(`/presensi/deletepegawai?idpegawai=${id}`)
-          .then((res) => {
-            let data = res.data;
-            if (data.isSuccess) {
-              Swal.fire(
-                "Berhasil",
-                `Anda berhasil mengapus data nip pegawai [${nip}]`,
-                "success"
-              ).then(function () {
-                getPegawais();
-              });
-            } else {
-              Swal.fire("Gagal", `${data.returnMessage}`, "error");
-            }
+    Swal.showLoading();
+    instanceAuth
+      .delete(`/presensi/deletepegawai?idpegawai=${id}`)
+      .then((res) => {
+        let data = res.data;
+        if (data.isSuccess) {
+          Swal.fire(
+            "Berhasil",
+            `Anda berhasil mengapus data nip pegawai [${nip}]`,
+            "success"
+          ).then(function () {
+            getPegawais();
           });
+        } else {
+          Swal.fire("Gagal", `${data.returnMessage}`, "error");
+        }
+      });
       }
     });
   };
@@ -307,7 +316,7 @@ const Pegawai = () => {
                   <Label htmlFor="file" value="Pas Foto" />
                 </div>
                 <FileInput
-                  helperText="Maksimal ukuran foto 5mb"
+                  // helperText="Maksimal ukuran foto 5mb"
                   id="file"
                   {...register("foto", { required: !isEdit })}
                 />

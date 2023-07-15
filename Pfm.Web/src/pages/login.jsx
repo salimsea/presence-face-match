@@ -11,6 +11,7 @@ const Login = () => {
   } = useForm();
 
   const btnLogin = (data) => {
+    Swal.showLoading();
     var fd = new FormData();
     fd.append("usernameOrEmail", data.email);
     fd.append("password", data.password);
@@ -85,7 +86,7 @@ const Login = () => {
 
             <button
               type="submit"
-              className="w-full text-white bg-[#9B5DD6] hover:bg-[#7747a4] focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+              className="w-full text-white bg-[#2A3890] hover:bg-[#212c72] focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
               Login to your account
             </button>

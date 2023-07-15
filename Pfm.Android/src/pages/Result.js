@@ -4,11 +4,11 @@ import {IMGSuccess, IMGFailed} from '../images';
 import {fontFamilys, fontSizes} from '../utilis';
 
 const Result = ({navigation, route}) => {
-  const {PARAMStatus, PARAMData} = route.params;
+  const {PARAMStatus, PARAMData, PARAMMsg} = route.params;
   useEffect(() => {
     setTimeout(() => {
       navigation.goBack();
-    }, 5000);
+    }, 10000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -32,6 +32,18 @@ const Result = ({navigation, route}) => {
           }}>
           {PARAMStatus ? 'Presensi Berhasil' : 'Presensi Gagal'}
         </Text>
+        {!PARAMStatus && (
+          <Text
+            style={{
+              fontSize: fontSizes.body,
+              fontFamily: fontFamilys.primary[400],
+              color: '#1D2125',
+              textAlign: 'center',
+              marginTop: 10,
+            }}>
+            {PARAMMsg}
+          </Text>
+        )}
       </View>
 
       {/* CARD */}
@@ -40,7 +52,7 @@ const Result = ({navigation, route}) => {
           <View
             style={{
               borderWidth: 1,
-              borderColor: '#B76DFE',
+              borderColor: '#2A3890',
               borderRadius: 10,
               padding: 20,
               flexDirection: 'row',
@@ -55,8 +67,14 @@ const Result = ({navigation, route}) => {
             <View style={{flex: 1}}>
               <LabelValue label={'NIP'} value={PARAMData?.nip} />
               <LabelValue label={'Nama'} value={PARAMData?.nama} />
-              <LabelValue label={'Jam Hadir'} value={PARAMData?.jamHadir} />
-              <LabelValue label={'Jam Keluar'} value={PARAMData?.JamKeluar} />
+              <LabelValue
+                label={'Jam Hadir'}
+                value={PARAMData?.presensiHariIni?.jamHadir}
+              />
+              <LabelValue
+                label={'Jam Keluar'}
+                value={PARAMData?.presensiHariIni?.jamKeluar}
+              />
             </View>
           </View>
         </View>
@@ -83,7 +101,7 @@ const Result = ({navigation, route}) => {
             color: '#B8B8B8',
             textAlign: 'center',
           }}>
-          5 detik
+          10 detik
         </Text>
       </View>
     </View>
@@ -95,7 +113,7 @@ const Button = ({onPress}) => {
     <TouchableOpacity onPress={onPress}>
       <View
         style={{
-          backgroundColor: '#B76DFE',
+          backgroundColor: '#EC3B39',
           paddingHorizontal: 30,
           paddingVertical: 10,
           borderRadius: 30,

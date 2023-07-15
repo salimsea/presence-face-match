@@ -209,27 +209,47 @@ public class PresensiController : Controller
     [HttpPost("Checkin", Name = "UsersCheckin")]
     public IActionResult Checkin(string bitmap_face)
     {
-        var path = $"{Path.Combine(AppSetting.PathFileUser)}/{Guid.NewGuid()}_presensi.png";
-        var png_bytes = Convert.FromBase64String(bitmap_face);
-        
+        var fileName = $"{Guid.NewGuid()}_presensi.png";
+        var path = $"{Path.Combine(AppSetting.PathFileUser)}/{fileName}";
         string err = "";
-        PegawaiViewModel pegawaiView = null;
+        byte[] png_bytes;
+        PegawaiViewModel pegawaiView = new();
+        try
+        {
+            png_bytes = Convert.FromBase64String(bitmap_face);
+        }
+        catch (System.Exception ex)
+        {
+            err = ex.Message;
+            goto GotoReturn;
+        }
+        
         TbPegawai tbPegawai = new();
-        presence.Checkin(png_bytes, path, 
+        presence.Checkin(png_bytes, fileName, 
                 successAction => {
-                    tbPegawai = successAction;
-                    System.IO.File.WriteAllBytes(path, png_bytes);
+                    if(successAction != null)
+                    {
+                        tbPegawai = successAction;
+                        System.IO.File.WriteAllBytes(path, png_bytes);
+                    }
                 }, 
                 failAction => { err = failAction; }
             );
 
-        if(!string.IsNullOrEmpty(err)) 
+        if(string.IsNullOrEmpty(err)) 
         {
             pegawaiView = new();
             pegawaiView.IdPegawai = tbPegawai.IdPegawai;
             pegawaiView.Nama = tbPegawai.Nama;
             pegawaiView.Nip = tbPegawai.Nip;
             pegawaiView.UrlFile = $"{AppSetting.BaseUrl}{AppSetting.UrlFileUser}/{tbPegawai.Foto}";
+            pegawaiView.PresensiHariIni = new();
+            var presensi = presence.GetPresensis().Where(x => x.IdPegawai == tbPegawai.IdPegawai && x.Tanggal.Date == DateTime.Now.Date).FirstOrDefault();
+            if(presensi != null)
+            {
+                pegawaiView.PresensiHariIni.JamHadir = presensi.JamHadir.ToString(@"hh\:mm");
+                pegawaiView.PresensiHariIni.JamKeluar = presensi.JamKeluar == null ? null : ((TimeSpan)presensi.JamKeluar).ToString(@"hh\:mm");
+            }
         }
        
         goto GotoReturn;
@@ -345,5 +365,42 @@ public class PresensiController : Controller
         });
     }
     #endregion
+
+    [Authorize]
+    [HttpGet("DownloadLaporanPresensi", Name = "DownloadLaporanPresensi")]
+    public ActionResult DownloadLaporanPresensi(string tanggalAwal, string tanggalAkhir)
+    {
+        var result = presence.GetPresensis();
+        if(!string.IsNullOrEmpty(tanggalAwal))
+            result = result.Where(x => x.Tanggal >= DateTimeHelper.SetDateTime(tanggalAwal) && x.Tanggal <= DateTimeHelper.StrToDateTime(tanggalAkhir)).ToList();
+
+        if (result == null)
+            return RedirectToAction("Error", "Webs", new { ErrorMessage = "data tidak ada" });
+        ReportPresenceExcelDailyViewModel ret = new()
+        {
+            Unit = "Semua",
+            Periode = string.IsNullOrEmpty(tanggalAwal) ? "Semua" : $"{DateTimeHelper.DateToLongString("id", DateTimeHelper.SetDateTime(tanggalAwal))} s.d. {DateTimeHelper.DateToLongString("id", DateTimeHelper.SetDateTime(tanggalAkhir))}",
+            Lists = new()
+        };
+        int no = 0;
+        foreach (var user in result)
+        {
+            ReportPresenceUserExcelDailyViewModel model = new()
+            {
+                No = ++no,
+                Nama = user.Pegawai.Nama,
+                Tanggal = DateTimeHelper.DateToLongString("id", user.Tanggal),
+                JamMasuk = user.JamHadir.ToString(@"hh\:mm"),
+                JamPulang = user.JamKeluar != null ? ((TimeSpan)user.JamKeluar).ToString(@"hh\:mm") : null
+            };
+            ret.Lists.Add(model);
+        }
+        var filename = ExcelHelper.GenerateReportPresenceDaily(UserInfo(), ret);
+
+        var bytes = System.IO.File.ReadAllBytes(filename);
+        System.IO.File.Delete(filename);
+        string fileDownload = $"laporan_kehadiran_pegawai.xlsx";
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileDownload);
+    }
 
 }

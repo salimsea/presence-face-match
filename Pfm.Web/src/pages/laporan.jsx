@@ -13,6 +13,9 @@ const Laporan = () => {
   const [dataPresensis, setDataPresensis] = useState([]);
   const [dataPegawais, setDataPegawais] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [tanggalAwal, setTanggalAwal] = useState(null);
+  const [tanggalAkhir, setTanggalAkhir] = useState(null);
+  
   const {
     register,
     handleSubmit,
@@ -33,13 +36,18 @@ const Laporan = () => {
   }, []);
 
   const getPresensis = (data = null) => {
-    var param = "";
-    if (data)
-      param = `tanggalAwal=${FUNCYmdToDmy(
-        data.tanggalAwal
-      )}&tanggalAkhir=${FUNCYmdToDmy(data.tanggalAkhir)}`;
+    Swal.showLoading();
+      var param = "";
+    if (data) {
+      var tglAwal = FUNCYmdToDmy(data.tanggalAwal),
+        tglAkhir = FUNCYmdToDmy(data.tanggalAkhir);
+      param = `tanggalAwal=${tglAwal}&tanggalAkhir=${tglAkhir}`;
+      setTanggalAwal(tglAwal)
+      setTanggalAkhir(tglAkhir)
+    }
     instanceAuth.get(`/presensi/getPresensis?${param}`).then((res) => {
       var data = res.data;
+      Swal.close()
       if (data.isSuccess) {
         setDataPresensis(data.data);
         setShowModalFilter(false);
@@ -75,6 +83,7 @@ const Laporan = () => {
 
   const btnAddPresensi = (data) => {
     var fd = new FormData();
+    Swal.showLoading();
     fd.append("tanggal", FUNCYmdToDmy(data.tanggal));
     data.idPegawais.map((item, index) => {
       fd.append(`idPegawai[${index}]`, item.value);
@@ -96,16 +105,56 @@ const Laporan = () => {
     });
   };
 
+  const btnDownload = () => {
+      Swal.showLoading();
+      var param = "";
+    if (tanggalAwal)
+      param = `tanggalAwal=${tanggalAwal}&tanggalAkhir=${tanggalAkhir}`;
+     instanceAuth
+      .get(
+        `presensi/DownloadLaporanPresensi?${param}`,
+        {
+          headers: {
+            "Content-Disposition": "attachment; filename=template.xlsx",
+            "Content-Type":
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          },
+          responseType: "arraybuffer",
+        }
+      )
+       .then((response) => {
+        Swal.fire(
+          "Berhasil",
+          "Laporan berhasil diunduh!",
+          "success"
+        );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute(
+          "download",
+          `laporan-presensi-karyawan.xlsx`
+        );
+        document.body.appendChild(link);
+        link.click();
+      })
+       .catch((error) => {
+        Swal.fire("Gagal", "Galat error!", "error");
+        
+        console.log(error);
+      });
+  }
+
   return (
     <Layout>
       <div className="">
-        <div className=" sm:rounded-lg">
+        <div className="sm:rounded-lg">
           <div className="flex items-center justify-between pb-4  dark:bg-gray-900">
             <div className="flex gap-3">
               <Button onClick={() => setShowModal(true)}>
                 Presensi Manual
               </Button>
-              <Button color="warning" onClick={() => setShowModalFilter(true)}>
+              <Button color="warning" onClick={() => btnDownload()}>
                 Download
               </Button>
               <Button color="dark" onClick={() => setShowModalFilter(true)}>

@@ -18,7 +18,9 @@ builder.Services.AddCors(options =>
             builder.WithOrigins(
                                 "http://localhost:3001",
                                 "http://localhost:3000",
-                                "http://localhost:5173"
+                                "http://localhost:5173",
+                                "https://presensi-sipm.netlify.app",
+                                "http://pfm-web.s34l.my.id"
                                 )
             .AllowAnyHeader()
             .AllowAnyMethod()

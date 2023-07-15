@@ -18,6 +18,7 @@ namespace Pfm.Core.Entities
         public string Foto { get; set; }
         [Column("created_by")]
         public int CreatedBy { get; set; }
+        [NotMapped]
         public TbUser User { get; set; }
         public static TbPegawai SetVal(TbPegawai pegawai, TbUser user)
         {
