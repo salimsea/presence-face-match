@@ -16,6 +16,8 @@ namespace Pfm.Core.Entities
         public string Nip { get; set; }
         [Column("foto")]
         public string Foto { get; set; }
+        [Column("status")]
+        public int Status { get; set; }
         [Column("created_by")]
         public int CreatedBy { get; set; }
         [NotMapped]

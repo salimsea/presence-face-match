@@ -18,7 +18,7 @@ public class PresensiController : Controller
         this.presence = presence;
     }
 
-     protected TbUser UserInfo()
+    protected TbUser UserInfo()
     {
         TbUser ret = (TbUser)HttpContext.Items["User"]!;
         return ret;
@@ -32,20 +32,21 @@ public class PresensiController : Controller
         string err = string.Empty;
         List<PegawaiViewModel> ret = new();
         var result = presence.GetPegawais();
-        if(result.Count() == 0) 
+        if (!result.Any())
         {
             err = "data not found";
             goto GotoReturn;
         }
         ret = result.Select(x => new PegawaiViewModel()
-        { 
+        {
             IdPegawai = x.IdPegawai,
-            Nama = x.Nama, 
-            Nip = x.Nip, 
-            UrlFile = $"{AppSetting.BaseUrl}{AppSetting.UrlFileUser}/{x.Foto}", 
-            CreatedBy = x.User.Nama 
+            Nama = x.Nama,
+            Nip = x.Nip,
+            UrlFile = $"{AppSetting.BaseUrl}{AppSetting.UrlFileUser}/{x.Foto}",
+            Status = x.Status,
+            CreatedBy = x.User.Nama
         }
-        ).ToList();
+        ).OrderByDescending(x => x.IdPegawai).ToList();
         goto GotoReturn;
     GotoReturn:
         return Ok(new ResponseViewModel<List<PegawaiViewModel>>()
@@ -62,7 +63,7 @@ public class PresensiController : Controller
         string err = string.Empty;
         PegawaiViewModel ret = new();
         var result = presence.GetPegawai(idPegawai);
-        if(result == null) 
+        if (result == null)
         {
             err = "data not found";
             goto GotoReturn;
@@ -70,6 +71,7 @@ public class PresensiController : Controller
         ret.IdPegawai = result.IdPegawai;
         ret.Nama = result.Nama;
         ret.Nip = result.Nip;
+        ret.Status = result.Status;
         ret.UrlFile = $"{AppSetting.BaseUrl}{AppSetting.UrlFileUser}/{result.Foto}";
         ret.CreatedBy = result.User.Nama;
         goto GotoReturn;
@@ -86,23 +88,26 @@ public class PresensiController : Controller
     public IActionResult AddPegawai(
         string nip,
         string nama,
+        int status,
         IFormFile foto
     )
     {
         string err = string.Empty;
-        
+
         TbPegawai tbPegawai = new TbPegawai
         {
             Nip = nip,
             Nama = nama,
             Foto = null,
+            Status = status,
             CreatedBy = 1
         };
         string pathFile = $"{AppSetting.PathFileUser}";
         if (foto != null && foto.Length >= 0)
             tbPegawai.Foto = $"{Guid.NewGuid()}{Path.GetExtension(foto.FileName)}";
         presence.AddPegawai(tbPegawai,
-        successAction => { 
+        successAction =>
+        {
             if (successAction != null)
             {
                 if (foto != null && foto.Length >= 0)
@@ -127,12 +132,13 @@ public class PresensiController : Controller
         int idPegawai,
         string nip,
         string nama,
+        int status,
         IFormFile foto
     )
     {
         string err = string.Empty;
         var result = presence.GetPegawai(idPegawai);
-        if(result == null) 
+        if (result == null)
         {
             err = "data not found";
             goto GotoReturn;
@@ -143,16 +149,19 @@ public class PresensiController : Controller
             Nip = nip,
             Nama = nama,
             Foto = result.Foto,
+            Status = status,
             CreatedBy = 1
         };
         string pathFile = $"{AppSetting.PathFileUser}";
         string fileOld = "";
-        if (foto != null && foto.Length >= 0) {
+        if (foto != null && foto.Length >= 0)
+        {
             fileOld = $"{AppSetting.PathFileUser}/{result.Foto}";
             tbPegawai.Foto = $"{Guid.NewGuid()}{Path.GetExtension(foto.FileName)}";
         }
         presence.EditPegawai(tbPegawai,
-        successAction => {
+        successAction =>
+        {
             if (successAction != null)
             {
                 if (foto != null && foto.Length >= 0)
@@ -179,17 +188,18 @@ public class PresensiController : Controller
     {
         string err = string.Empty;
         var data = presence.GetPegawai(idPegawai);
-        if(data == null)
+        if (data == null)
         {
-            err ="data not found";
+            err = "data not found";
             goto GotoReturn;
         }
         string fileOld = $"{AppSetting.PathFileUser}/{data.Foto}";
         presence.DeletePegawai(idPegawai,
-        successAction => { 
+        successAction =>
+        {
             if (successAction != null)
             {
-                    FileHelper.DeleteFile(fileOld);
+                FileHelper.DeleteFile(fileOld);
             }
         },
         failAction => { err = failAction; });
@@ -223,20 +233,21 @@ public class PresensiController : Controller
             err = ex.Message;
             goto GotoReturn;
         }
-        
+
         TbPegawai tbPegawai = new();
-        presence.Checkin(png_bytes, fileName, 
-                successAction => {
-                    if(successAction != null)
+        presence.Checkin(png_bytes, fileName,
+                successAction =>
+                {
+                    if (successAction != null)
                     {
                         tbPegawai = successAction;
                         System.IO.File.WriteAllBytes(path, png_bytes);
                     }
-                }, 
+                },
                 failAction => { err = failAction; }
             );
 
-        if(string.IsNullOrEmpty(err)) 
+        if (string.IsNullOrEmpty(err))
         {
             pegawaiView = new();
             pegawaiView.IdPegawai = tbPegawai.IdPegawai;
@@ -245,13 +256,13 @@ public class PresensiController : Controller
             pegawaiView.UrlFile = $"{AppSetting.BaseUrl}{AppSetting.UrlFileUser}/{tbPegawai.Foto}";
             pegawaiView.PresensiHariIni = new();
             var presensi = presence.GetPresensis().Where(x => x.IdPegawai == tbPegawai.IdPegawai && x.Tanggal.Date == DateTime.Now.Date).FirstOrDefault();
-            if(presensi != null)
+            if (presensi != null)
             {
                 pegawaiView.PresensiHariIni.JamHadir = presensi.JamHadir.ToString(@"hh\:mm");
                 pegawaiView.PresensiHariIni.JamKeluar = presensi.JamKeluar == null ? null : ((TimeSpan)presensi.JamKeluar).ToString(@"hh\:mm");
             }
         }
-       
+
         goto GotoReturn;
     GotoReturn:
         return Ok(new ResponseViewModel<PegawaiViewModel>()
@@ -270,10 +281,10 @@ public class PresensiController : Controller
         foreach (var item in idPegawai)
         {
             var pegawai = presence.GetPegawai(item);
-            if(pegawai == null) { err = "pegawai tidak ada!"; goto GotoReturn; }
+            if (pegawai == null) { err = "pegawai tidak ada!"; goto GotoReturn; }
             DateTime dtTanggal = DateTimeHelper.StrToDateTime(tanggal);
             var cek = presence.GetPresensis().Where(x => x.IdPegawai == item && x.Tanggal == dtTanggal).FirstOrDefault();
-            if(cek != null) { err = $"nama pegawai [{cek.Pegawai.Nama}] sudah melakukan absen pada tanggal [{tanggal}]!"; goto GotoReturn; }
+            if (cek != null) { err = $"nama pegawai [{cek.Pegawai.Nama}] sudah melakukan absen pada tanggal [{tanggal}]!"; goto GotoReturn; }
             tbPresensis.Add(new()
             {
                 IdPegawai = item,
@@ -304,14 +315,14 @@ public class PresensiController : Controller
         string err = string.Empty;
         List<PresensiViewModel> ret = new();
         var presensis = presence.GetPresensis();
-        if(!string.IsNullOrEmpty(tanggalAwal))
+        if (!string.IsNullOrEmpty(tanggalAwal))
             presensis = presensis.Where(x => x.Tanggal >= DateTimeHelper.SetDateTime(tanggalAwal) && x.Tanggal <= DateTimeHelper.StrToDateTime(tanggalAkhir)).ToList();
 
         ret = presensis.Select(x => new PresensiViewModel()
         {
             IdPresensi = x.IdPresensi,
             JamHadir = x.JamHadir.ToString(@"hh\:mm"),
-            JamKeluar =  x.JamKeluar == null ? null : ((TimeSpan)x.JamKeluar).ToString(@"hh\:mm"),
+            JamKeluar = x.JamKeluar == null ? null : ((TimeSpan)x.JamKeluar).ToString(@"hh\:mm"),
             FotoHadir = $"{AppSetting.BaseUrl}{AppSetting.UrlFileUser}/{x.FotoHadir}",
             FotoKeluar = $"{AppSetting.BaseUrl}{AppSetting.UrlFileUser}/{x.FotoKeluar}",
             Nama = x.Pegawai?.Nama,
@@ -371,7 +382,7 @@ public class PresensiController : Controller
     public ActionResult DownloadLaporanPresensi(string tanggalAwal, string tanggalAkhir)
     {
         var result = presence.GetPresensis();
-        if(!string.IsNullOrEmpty(tanggalAwal))
+        if (!string.IsNullOrEmpty(tanggalAwal))
             result = result.Where(x => x.Tanggal >= DateTimeHelper.SetDateTime(tanggalAwal) && x.Tanggal <= DateTimeHelper.StrToDateTime(tanggalAkhir)).ToList();
 
         if (result == null)

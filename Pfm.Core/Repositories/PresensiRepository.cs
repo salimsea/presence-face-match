@@ -38,7 +38,7 @@ namespace Pfm.Core.Repositories
                 failAction(ErrorHelper.GetErrorMessage("Login", ex));
             }
         }
-         
+
         public void Checkin(byte[] face, string fileName, Action<TbPegawai> successAction, Action<string> failAction)
         {
             try
@@ -63,8 +63,8 @@ namespace Pfm.Core.Repositories
 
                     var matchImages = new List<MatchImage> { matchImage1, matchImage2 };
                     var matchingRequest = new MatchRequest(
-                        null, 
-                        false, 
+                        null,
+                        false,
                         matchImages
                     );
 
@@ -73,11 +73,11 @@ namespace Pfm.Core.Repositories
                     decimal score = 0;
                     foreach (var comparison in matchingResponse.Results)
                     {
-                        if(comparison.FirstIndex == 0)
+                        if (comparison.FirstIndex == 0)
                             score = comparison.Similarity * 100;
                     }
 
-                    if(score >= 075)
+                    if (score >= 075)
                     {
                         msgFace = "";
                         tbPegawai = item;
@@ -88,18 +88,25 @@ namespace Pfm.Core.Repositories
                         msgFace = "Wajah tidak terdaftar!";
                     }
                 }
-                if(msgFace == "") {
+                if (msgFace == "")
+                {
                     using var conn = PostgreSqlConnection;
                     using var tx = conn.BeginTransaction();
+                    if (tbPegawai.Status == -1)
+                    {
+                        successAction(null);
+                        failAction("Pegawai sudah tidak aktif!");
+                        return;
+                    }
                     var cekPresensi = conn.GetList<TbPresensi>().Where(x => x.Tanggal.Date == DateTime.Now.Date)
                                                                 .Where(x => x.IdPegawai == tbPegawai.IdPegawai)
                                                                 .FirstOrDefault();
                     var tbPengaturan = conn.GetList<TbPengaturan>().FirstOrDefault();
 
-                    if(cekPresensi != null)
+                    if (cekPresensi != null)
                     {
                         ///sudah absen hadir dan sudah absen pulang
-                        if(cekPresensi.JamKeluar != null)
+                        if (cekPresensi.JamKeluar != null)
                         {
                             successAction(null);
                             failAction("Anda sudah melakukan absensi hadir & pulang, tidak dapat absen kembali !");
@@ -114,13 +121,17 @@ namespace Pfm.Core.Repositories
                                 successAction(null);
                                 failAction("Absen pulang belum pada waktu nya!");
                                 return;
-                            } else {
+                            }
+                            else
+                            {
                                 cekPresensi.JamKeluar = DateTime.Now.TimeOfDay;
                                 cekPresensi.FotoKeluar = fileName;
                                 conn.Update(cekPresensi);
                             }
                         }
-                    } else {
+                    }
+                    else
+                    {
                         TbPresensi tbPresensi = new()
                         {
                             IdPegawai = tbPegawai.IdPegawai,
@@ -134,12 +145,14 @@ namespace Pfm.Core.Repositories
                         };
                         conn.Insert(tbPresensi);
                     }
-                   
+
 
                     successAction(tbPegawai);
                     failAction("");
                     tx.Commit();
-                } else {
+                }
+                else
+                {
                     successAction(null);
                     failAction(msgFace);
                 }
@@ -174,7 +187,7 @@ namespace Pfm.Core.Repositories
 
         public void DeletePegawai(int idPegawai, Action<string> successAction, Action<string> failAction)
         {
-             try
+            try
             {
                 using var conn = PostgreSqlConnection;
                 using var tx = conn.BeginTransaction();
@@ -222,9 +235,9 @@ namespace Pfm.Core.Repositories
         public IEnumerable<TbPegawai> GetPegawais()
         {
             using var conn = PostgreSqlConnection;
-            return from a in conn.GetList<TbPegawai>() 
-                    join b in conn.GetList<TbUser>() on a.CreatedBy equals b.IdUser
-                    select TbPegawai.SetVal(a, b);
+            return from a in conn.GetList<TbPegawai>()
+                   join b in conn.GetList<TbUser>() on a.CreatedBy equals b.IdUser
+                   select TbPegawai.SetVal(a, b);
         }
 
         public IEnumerable<TbUser> GetUsers()
